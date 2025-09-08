@@ -1,5 +1,20 @@
 {
-  "dependencies": {
-    "open": "^10.1.2"
-  }
+  "name": "energy-estimation-tool-root",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "build": "npm run build-client && npm run copy-server",
+    "build-client": "cd client && npm install && npm run compile",
+    "copy-server": "rm -rf client/server && cp -r server client/server",
+    "package": "npm run build && cd client && vsce package"
+  },
+  "devDependencies": {
+    "vsce": "^2.11.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/afonsoCarreira1/EnergyAwareProgrammingFramework/ext"
+  },
+  "author": "Afonso",
+  "license": "MIT"
 }

@@ -422,7 +422,7 @@
       }
 
       if (message.type === 'updateEnergy') {
-        const energyValue = formatEnergy(message.energy) ?? '--';
+        const energyValue = formatEnergy(message.totalEnergyUsed) ?? '--';
         document.getElementById('energy-value').textContent = energyValue;
 
         const methodsEnergy = message.methodsEnergy || {};

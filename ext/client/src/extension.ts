@@ -7,12 +7,13 @@ import { LanguageClient, LanguageClientOptions, ServerOptions } from 'vscode-lan
 let sliderPanel: vscode.WebviewPanel | undefined;
 let client: LanguageClient;
 
-/**
- * Copies all files from server/custom_progs/lib to workspace/lib
- */
 async function installCustomLibs(context: vscode.ExtensionContext) {
-    const sourceLibDir = context.asAbsolutePath(path.join('..', 'server', 'custom_progs'));
+    const sourceLibDir = context.asAbsolutePath(path.join('server', 'custom_progs'));
     const workspaceFolder = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+
+    console.log('Installing custom libs...');
+    console.log('Source lib dir:', sourceLibDir);
+    console.log('Workspace folder:', workspaceFolder);
 
     if (!workspaceFolder) {
         console.warn('No workspace folder found.');
@@ -23,75 +24,75 @@ async function installCustomLibs(context: vscode.ExtensionContext) {
 
     try {
         await fsp.mkdir(destLibDir, { recursive: true });
-
         const files = await fsp.readdir(sourceLibDir);
+
+        console.log('Files in source lib dir:', files);
 
         for (const file of files) {
             const sourcePath = path.join(sourceLibDir, file);
             const destPath = path.join(destLibDir, file);
 
-            const stat = await fsp.stat(sourcePath);
-            if (stat.isFile()) {
-                console.log(`Copying file: ${file}`);
-                await fsp.copyFile(sourcePath, destPath);
-            } else {
-                console.log(`Skipping non-file: ${file}`);
+            try {
+                const stat = await fsp.stat(sourcePath);
+                if (stat.isFile()) {
+                    console.log(`Copying file: ${file}`);
+                    await fsp.copyFile(sourcePath, destPath);
+                } else if (stat.isDirectory()) {
+                    console.log(`Skipping directory: ${file}`);
+                } else {
+                    console.log(`Skipping non-file/non-dir: ${file}`);
+                }
+            } catch (err) {
+                console.warn(`Skipping ${file}: ${err}`);
             }
         }
-
     } catch (error) {
         console.error(`Failed to copy files to workspace/lib: ${error}`);
     }
 }
 
 export async function activate(context: vscode.ExtensionContext) {
-    const jarDir = context.asAbsolutePath(path.join('..', 'server'));
-    const mainJar = path.join(jarDir, 'energy_prediction-1.0-SNAPSHOT-jar-with-dependencies.jar');
-    //const helperJar = path.join(jarDir, 'BinaryTrees.jar');
+    console.log('Activating extension...');
+    console.log('Extension path:', context.extensionPath);
 
-    //const sep = process.platform === 'win32' ? ';' : ':';
-    const classpath = `${mainJar}`;//${sep}${helperJar}
+    const jarDir = context.asAbsolutePath('server');
+    console.log('Server folder absolute path:', jarDir);
+
+    const mainJar = path.join(jarDir, 'energy_prediction-1.0-SNAPSHOT-jar-with-dependencies.jar');
+    console.log('JAR path:', mainJar);
+    console.log('Does JAR exist?', fs.existsSync(mainJar));
 
     const serverOptions: ServerOptions = {
         command: 'java',
-        args: ['-cp', classpath, 'com.tool.App']
+        args: ['-cp', mainJar, 'com.tool.App']
     };
 
     const clientOptions: LanguageClientOptions = {
-        documentSelector: [{ scheme: 'file', language: 'java' }],
+        documentSelector: [{ scheme: 'file', language: 'java' }]
     };
 
     client = new LanguageClient('javaLspServer', 'Java LSP Server', serverOptions, clientOptions);
-    await client.start();
 
-    // Install ALL files into workspace/lib from server/custom_progs/lib
+    try {
+        await client.start();
+        console.log('Language client started successfully.');
+    } catch (err) {
+        console.error('LanguageClient failed to start:', err);
+    }
+
     await installCustomLibs(context);
 
-    // Server → Webview: update sliders
     client.onNotification('custom/updateSliders', (params) => {
-        console.log('Received custom/updateSliders notification:', params);
+        console.log('Received updateSliders:', params);
         if (sliderPanel) {
-            sliderPanel.webview.postMessage({
-                type: 'updateSliders',
-                sliders: params.sliders,
-                methods: params.methods
-            });
-        } else {
-            console.warn('Slider panel is not open, message not sent.');
+            sliderPanel.webview.postMessage({ type: 'updateSliders', ...params });
         }
     });
 
-    // Server → Webview: update energy values
     client.onNotification('custom/updateEnergy', (params) => {
-        console.log('Received custom/updateEnergy notification:', params);
+        console.log('Received updateEnergy:', params);
         if (sliderPanel) {
-            sliderPanel.webview.postMessage({
-                type: 'updateEnergy',
-                energy: params.totalEnergyUsed,
-                methodsEnergy: params.methodsEnergy
-            });
-        } else {
-            console.warn('Slider panel is not open, message not sent.');
+            sliderPanel.webview.postMessage({ type: 'updateEnergy', ...params });
         }
     });
 
@@ -103,34 +104,31 @@ export async function activate(context: vscode.ExtensionContext) {
             { enableScripts: true }
         );
 
-        const htmlPath = vscode.Uri.file(path.join(context.extensionPath, 'media', 'sliders.html'));
-        const buffer = await vscode.workspace.fs.readFile(htmlPath);
-        sliderPanel.webview.html = buffer.toString();
+        const htmlPath = context.asAbsolutePath('media/sliders.html');
+        console.log('Loading webview HTML from:', htmlPath);
 
-        // Webview → Server
+        try {
+            const buffer = await fsp.readFile(htmlPath);
+            sliderPanel.webview.html = buffer.toString();
+        } catch (err) {
+            console.error('Failed to load webview HTML:', err);
+        }
+
         sliderPanel.webview.onDidReceiveMessage(message => {
+            console.log('Webview message:', message);
             switch (message.type) {
                 case 'sliderChange':
-                    console.log(`Slider changed: ${message.id} = ${message.value}`);
-                    client.sendNotification('custom/sliderChanged', {
-                        id: message.id,
-                        value: message.value
-                    });
+                    client.sendNotification('custom/sliderChanged', { id: message.id, value: message.value });
                     break;
-
                 case 'calculateEnergy':
-                    console.log('Received calculateEnergy request from webview');
                     client.sendNotification('custom/calculateEnergy');
                     break;
-
                 default:
-                    console.warn(`Unknown message type received from webview: ${message.type}`);
+                    console.warn('Unknown message type:', message.type);
             }
         });
 
-        sliderPanel.onDidDispose(() => {
-            sliderPanel = undefined;
-        });
+        sliderPanel.onDidDispose(() => sliderPanel = undefined);
     });
 
     context.subscriptions.push(disposable);
