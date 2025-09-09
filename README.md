@@ -1,6 +1,6 @@
 # 🔋 Java Energy Consumption Prediction
 
-This repository contains a framework of a set of Java Maven projects designed to **train machine learning models** to predict the **energy consumption** of Java programs.
+This repository contains a framework with a set of Java Maven projects used as benchmarks, together with Python scripts to train machine learning models that predict the energy consumption of Java programs.
 
 The workflow involves:
 1. **Generating Java becnhmarks** based on collection methods.
@@ -90,20 +90,37 @@ This module **coordinates the entire process**, calling CodeGen to generate benc
 
 ---
 
-### 4️⃣ Energy Extension 🚧 (In Progress)
-This module provides a VSCode extension that combines static analysis and machine learning to predict the energy consumption of Java programs. It uses pre-trained models and takes into account various program features, such as loops, method calls, and control flow structures, to estimate energy usage accurately. The extension also includes interactive sliders that allow users to modify input values, loop counts, and other parameters to visualize how these changes impact overall energy consumption.
-
- 
-
----
-
-## 📊 Machine Learning Training 🚧 (In Progress)
+## 4️⃣ Machine Learning Training 
 After data collection, you can train a model using the provided Python script:
 
 **Run ML Training:**  
-```sh
-python3 ml/train.py
 ```
+cd ml
+source venv/bin/activate
+
+python3 train.py (train [folder_date] | plot [folder_date] [method_name_for_plotting])
+Example: python3 train.py train 2025_06_30
+Example: python3 train.py plot 2025_06_30 checkTree_com_template_programsToBenchmark_BinaryTrees_TreeNode_
+```
+
+Generated results are stored in the **`out/`** folder.
+
+---
+
+### 5️⃣ Energy Extension
+This module provides a VSCode extension that combines static analysis and machine learning to predict the energy consumption of Java programs. It uses pre-trained models and takes into account various program features, such as loops, method calls, and control flow structures, to estimate energy usage accurately. The extension also includes interactive sliders that allow users to modify input values, loop counts, and other parameters to visualize how these changes impact overall energy consumption.
+
+
+**Install extension :**  
+```sh
+./vscode_extension install
+```
+
+**Uninstall extension :**  
+```sh
+./vscode_extension uninstall
+```
+ 
 
 ---
 

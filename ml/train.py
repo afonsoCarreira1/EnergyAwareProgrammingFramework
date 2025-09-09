@@ -1,3 +1,4 @@
+import sys
 import numpy as np 
 import matplotlib.pyplot as plt 
 import math
@@ -308,14 +309,7 @@ def model(df,modelPath,log):
     #plot_prediction_vs_feature(regressor, X_test, y_test, 'input2')
     #plot3D(X,y)
     
-#def checkStrangeValuesOfBubbleSort():
-#    filtered_df = df.loc[(df['input1'] > 2743)]#.loc[(df['input1'] >= 1e3) & (df['input1'] <= 1e4)  ]#& (df['EnergyUsed'] >= 50)
-#    filtered_df = filtered_df.sort_values(by='EnergyUsed')
-#    # Find columns where all values are the same
-#    constant_columns = filtered_df.nunique() == 1
-#    # Drop those columns
-#    filtered_df_cleaned = filtered_df.loc[:, ~constant_columns]
-#    save_df_to_csv(filtered_df_cleaned)
+
 
 def save_df_to_csv(df, filename="output.csv"):
     df.to_csv(filename, index=False)
@@ -610,8 +604,8 @@ def plots(files,fname,date,log_scale):
         df = clean_data(df,False)
         X = df.iloc[:, :-1]  # All columns except the last one
         y = df.iloc[:, -1]   # Energy column
-        print(f'fname -> {filename} | correlations : {correlation(df)}')
-        #plot3D(X,y)
+        #print(f'fname -> {filename} | correlations : {correlation(df)}')
+        plot3D(X,y)
         #plot_energy_vs_feature4(X,y,'input0','java.util.concurrent.CopyOnWriteArrayList')
         #plot_by_arr_size(df)
         #plot_energy_vs_feature(X,y,'input0',log_scale)
@@ -690,13 +684,28 @@ def get_model_expression(input0):
 
 
 def main():
-    #os.makedirs('out/', exist_ok=True)
-    date = "2025_06_30"#2025_05_20 2025_06_30
-    files,models_available = getAllFeatures(date)
-    plots(files,"checkTree_com_template_programsToBenchmark_BinaryTrees_TreeNode_",date,log_scale=False)#equals_java_lang_Object_ createTree_int_
-    #readDividedFeatures(files)
-    #check_one_method()
-    #createFilesForExtension(models_available)
+    args = sys.argv[1:]
+    if len(args) < 1:
+        print("Usage: python3 train.py (train [folder_date] | plot [folder_date] [method_name_for_plotting])")
+        print("Example: python3 train.py train 2025_06_30")
+        print("Example: python3 train.py plot 2025_06_30 checkTree_com_template_programsToBenchmark_BinaryTrees_TreeNode_")
+        sys.exit(1)
+    date = args[1]
+    if args[0] == "train":
+        os.makedirs('out/', exist_ok=True)
+        date = args[1]
+        files,models_available = getAllFeatures(date)
+        readDividedFeatures(files)
+        createFilesForExtension(models_available)
+    else:
+        #os.makedirs('out/', exist_ok=True)
+        #date = args[1]#"2025_06_30"#2025_05_20 2025_06_30
+        files,models_available = getAllFeatures(date)
+        method_name = args[2]#"checkTree_com_template_programsToBenchmark_BinaryTrees_TreeNode_"
+        plots(files,method_name,date,log_scale=False)#equals_java_lang_Object_ createTree_int_
+        #readDividedFeatures(files)
+        #check_one_method()
+        #createFilesForExtension(models_available)
 
 main()
 

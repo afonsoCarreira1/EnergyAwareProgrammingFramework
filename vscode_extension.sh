@@ -1,6 +1,8 @@
 #!/bin/bash
 
 if [ "$1" == "install" ]; then
+    bash run_parser.sh
+    bash tool.sh
     cd ext/client
     npm run compile
     cd ..
