@@ -1,6 +1,6 @@
-com/tool/CalculateEnergy.class
 com/tool/Tool.class
+com/tool/CalculateEnergy.class
 com/tool/CustomLanguageClient.class
+com/tool/Sliders.class
 com/tool/Tool$ToolTextDocumentService.class
 com/tool/App.class
-com/tool/Sliders.class

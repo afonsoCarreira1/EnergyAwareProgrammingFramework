@@ -422,7 +422,8 @@
       }
 
       if (message.type === 'updateEnergy') {
-        const energyValue = formatEnergy(message.totalEnergyUsed) ?? '--';
+        console.log('Received updateEnergy:', message, ' with:',message.energy);
+        const energyValue = formatEnergy(message.energy) ?? '--';
         document.getElementById('energy-value').textContent = energyValue;
 
         const methodsEnergy = message.methodsEnergy || {};
